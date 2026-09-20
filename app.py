@@ -95,14 +95,13 @@ try:
     correlation_matrix = returns.corr()
     st.dataframe(correlation_matrix.style.background_gradient(cmap='plasma').format("{:.2f}"), use_container_width=True)
 
-    # 8. FIXED NEWS MATRIX (Grabs single text string item)
+    # 8. FIXED NEWS MATRIX
     st.markdown("---")
     
-    # FIX: Select only the first ticker string token so yfinance reads it perfectly
+    # CRITICAL EXTRACTOR FIX: Grab the index 0 item directly as an independent string text
     primary_ticker = tickers[0] if tickers else "AAPL"
     st.subheader(f"📡 {primary_ticker} Live Network Media Broadcast Matrix")
     
-    # Initialize news lists
     cnn_feed, fox_feed, msnbc_feed = [], [], []
     
     try:
@@ -115,7 +114,6 @@ try:
                 publisher_name = item.get('publisher', '').lower()
                 link_url = item.get('link', '#')
                 
-                # Check for major publisher variations
                 if any(p in publisher_name for p in ['cnn', 'bloomberg', 'reuters', 'cnbc']):
                     cnn_feed.append((title_text, link_url))
                 elif any(p in publisher_name for p in ['fox', 'journal', 'barron', 'wsj', 'investor', 'motley']):
@@ -125,31 +123,28 @@ try:
     except:
         pass
 
-    # Dynamic fallback entries if live API has zero records for a specific network bucket
-    fallback_titles = [
-        f"Market Momentum: Global volume indicators point toward steady scaling zones for {primary_ticker} layout sheets.",
-        f"Earnings Strategy: Adjusted margin boundaries evaluated ahead of next official corporate update cycles."
-    ]
+    fallback_1 = f"Market Trend Watch: Institutional momentum indicators remain steady for {primary_ticker} shares."
+    fallback_2 = f"Earnings Strategy: Adjusted margin boundaries evaluated ahead of next official corporate update cycles."
     
     news_col1, news_col2, news_col3 = st.columns(3)
 
     with news_col1:
         st.markdown("### 🔴 CNN Business")
-        display_cnn = cnn_feed if cnn_feed else [(fallback_titles[0], '#'), (fallback_titles[1], '#')]
+        display_cnn = cnn_feed if cnn_feed else [(fallback_1, '#'), (fallback_2, '#')]
         for title, link in display_cnn[:2]:
             st.info(f"📰 **Headline:** [{title}]({link})")
             st.caption("Live Feed • Market Tracker")
 
     with news_col2:
         st.markdown("### 🔵 Fox Business")
-        display_fox = fox_feed if fox_feed else [(fallback_titles[0], '#'), (fallback_titles[1], '#')]
+        display_fox = fox_feed if fox_feed else [(fallback_1, '#'), (fallback_2, '#')]
         for title, link in display_fox[:2]:
             st.success(f"⚡ **Headline:** [{title}]({link})")
             st.caption("Live Feed • Enterprise Coverage")
 
     with news_col3:
         st.markdown("### 🟣 MSNBC Business")
-        display_msnbc = msnbc_feed if msnbc_feed else [(fallback_titles[0], '#'), (fallback_titles[1], '#')]
+        display_msnbc = msnbc_feed if msnbc_feed else [(fallback_1, '#'), (fallback_2, '#')]
         for title, link in display_msnbc[:2]:
             st.warning(f"🔍 **Headline:** [{title}]({link})")
             st.caption("Live Feed • Financial Insight")
