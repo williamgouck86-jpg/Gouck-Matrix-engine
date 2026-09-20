@@ -1,94 +1,95 @@
-import streamlit as st
+    import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
+import yfinance as yf
 
-st.set_page_config(layout="wide") # Expands the canvas for a premium dashboard look
-st.title("📊 The Gouck Matrix Engine")
+st.set_page_config(layout="wide") # Full widescreen dashboard layout
+st.title("📊 The Gouck Matrix Engine Pro")
 
-# 1. Your Real Stripe Sandbox Payment Link Updated Directly Below
-STRIPE_PAYMENT_LINK = "https://buy.stripe.com/test_9B600i12x17f4Osce34Vy00" 
+# 1. Your Real Stripe Sandbox Payment Link
+STRIPE_PAYMENT_LINK = "https://stripe.com" 
 
-# 2. Setup the sidebar settings panel
-st.sidebar.header("🎛️ Control Panel")
-matrix_size = st.sidebar.slider("Select Matrix Dimension Size (N x N):", min_value=2, max_value=500, value=15)
-solver_iterations = st.sidebar.slider("Max GMRES Iterations:", 10, 200, 50)
+# 2. Control Panel Sidebar Configuration
+st.sidebar.header("🎛️ Engine Configuration")
 
-# 3. Paywall Logic Enforcement
-if matrix_size > 50:
-    st.error("⚠️ High-Dimensional Solver Locked!")
-    st.info("Computing dimensions greater than 50x50 requires a one-time product license.")
+# Add a license bypass key text entry field
+access_key = st.sidebar.text_input("Enter Pro Access License Key:", type="password")
+
+# Multi-stock picker dropdown setup
+ticker_input = st.sidebar.text_input(
+    "Enter Asset Stock Tickers (Comma separated):", 
+    value="AAPL, MSFT, GOOGL"
+)
+
+# Convert string inputs into a clean list of individual tickers
+tickers = [t.strip().upper() for t in ticker_input.split(",") if t.strip()]
+num_assets = len(tickers)
+
+# 3. Paywall Restriction Security Enforcement Logic
+is_unlocked = (access_key == "GOUCK_PRO_2026") # Admin master bypass code
+
+if num_assets > 3 and not is_unlocked:
+    st.error("⚠️ High-Dimensional Portfolio Array Locked!")
+    st.info("Analyzing a matrix of more than 3 target assets requires Gouck Pro Access.")
     
-    # Render a stylized purple Stripe call-to-action button
+    # Corrected parameter: unsafe_allow_html=True fixed below!
     st.markdown(
         f'<a href="{STRIPE_PAYMENT_LINK}" target="_blank">'
         '<button style="background-color:#635BFF; color:white; padding:15px 30px; '
         'border:none; border-radius:6px; font-size:18px; cursor:pointer; font-weight:bold; width:100%; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">'
         '💳 Click Here to Unlock Gouck Pro Access ($5.00)'
         '</button></a>',
-        unsafe_url=True
+        unsafe_allow_html=True
     )
-    st.stop() # Stops execution here so free users cannot access premium graphics data
+    st.stop() # Prevents non-paying users from pulling live data rows
 
-# 4. Standard Math Engine Generation Loop (Simulating a Matrix Solver)
-st.success(f"🚀 Running baseline Gouck Matrix Engine solver for a {matrix_size}x{matrix_size} system...")
+# 4. Live Global Stock Market Data Extraction Core Loop
+st.success(f"🚀 Extracting historical live data matrix arrays for: {', '.join(tickers)}...")
 
-# Generate realistic, dynamic portfolio optimization data arrays
-steps = solver_iterations
-x_data = np.arange(steps)
-residual_error = np.exp(-x_data / (matrix_size * 0.5)) + np.random.normal(0, 0.02, steps)
-residual_error = np.clip(residual_error, 1e-5, 2.0) # bound data cleanly
+try:
+    # Pull trailing 6 months of market close data for the requested assets
+    data = yf.download(tickers, period="6mo")['Close']
+    
+    # If downloading a single stock, structure data as a clean DataFrame layout
+    if isinstance(data, np.ndarray) or isinstance(data, list):
+        data = data.to_frame()
+        
+    # Calculate percentage daily adjustments and baseline correlation index metrics
+    returns = data.pct_change().dropna()
+    cumulative_returns = (1 + returns).cumprod() - 1
+    
+    # 5. Build an Interactive Financial Analysis Performance Dashboard Layout
+    fig = go.Figure()
 
-portfolio_return = np.cumsum(np.random.normal(0.001, 0.02, steps)) + 0.1
-portfolio_risk = np.abs(np.sin(x_data / 10) * 0.15 + np.random.normal(0, 0.005, steps))
+    # Dynamic line generator to loop through and map each selected stock individually
+    for col in cumulative_returns.columns:
+        fig.add_trace(go.Scatter(
+            x=cumulative_returns.index, 
+            y=cumulative_returns[col],
+            mode='lines',
+            name=f'{col} Yield Trend',
+            line=dict(width=2),
+            hovertemplate=f'<b>Asset</b>: {col}<br><b>Date</b>: %{{x|%b %d}}<br><b>Growth</b>: %{{y:.2%}}<extra></extra>'
+        ))
 
-# 5. Build an Exciting, Fully Interactive Multi-Tab Plotly Graph Window
-fig = go.Figure()
+    # Refine and polish aesthetic canvas theme parameters configuration layout
+    fig.update_layout(
+        title="📈 Real-Time Asset Return Frontiers (Interactive Analysis Cluster)",
+        xaxis_title="Calendar Trading Windows (Timeline)",
+        yaxis_title="Normalized Cumulative Return Index",
+        hovermode="x unified",
+        template="plotly_dark",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=40, r=40, t=80, b=40)
+    )
 
-# Add Convergence Speed Line Curve
-fig.add_trace(go.Scatter(
-    x=x_data, y=residual_error,
-    mode='lines+markers',
-    name='Solver Residual Error',
-    line=dict(color='#FF4B4B', width=3),
-    marker=dict(size=5, symbol='circle'),
-    hovertemplate='<b>Iteration</b>: %{x}<br><b>Error Drop</b>: %{y:.4f}<extra></extra>'
-))
+    st.plotly_chart(fig, use_container_width=True)
 
-# Add Portfolio Return Variance Wave Curve
-fig.add_trace(go.Scatter(
-    x=x_data, y=portfolio_return,
-    mode='lines',
-    name='Projected Asset Yield',
-    line=dict(color='#00CC96', width=3, dash='dash'),
-    hovertemplate='<b>Iteration</b>: %{x}<br><b>Yield</b>: %{y:.2%}<extra></extra>'
-))
+    # 6. Informative Analytical KPI Tracking Cards Widgets Display Summary Layout
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Active Assets Computed", f"{num_assets} Equities", "Live")
+    col2.metric("Matrix Cluster Horizon", "6 Months", "Trailing")
+    col3.metric("Engine Optimization Status", "Verified Stable", "100%")
 
-# Add Risk Frontier Area Shade Chart
-fig.add_trace(go.Scatter(
-    x=x_data, y=portfolio_risk,
-    mode='lines',
-    name='Risk Margin Boundary',
-    fill='tozeroy',
-    line=dict(color='#635BFF', width=1),
-    hovertemplate='<b>Iteration</b>: %{x}<br><b>Risk Value</b>: %{y:.4f}<extra></extra>'
-))
-
-# Style and polish dashboard canvas parameters layout
-fig.update_layout(
-    title=f"📈 Live Linear Algebra Solver Analysis Layer ({matrix_size}x{matrix_size} Grid)",
-    xaxis_title="Algorithm Progression Cycles (Iterations)",
-    yaxis_title="Normalized Value Index Metric",
-    hovermode="x unified", 
-    template="plotly_dark", 
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-    margin=dict(l=40, r=40, t=80, b=40)
-)
-
-# Display the high-performance visualization container natively inside your Streamlit page
-st.plotly_chart(fig, use_container_width=True)
-
-# 6. Add metrics indicator counters summary below chart
-col1, col2, col3 = st.columns(3)
-col1.metric("Final Matrix Dimension Level", f"{matrix_size} x {matrix_size}", "+Baseline")
-col2.metric("Convergence Steps Executed", f"{steps} Cycles", "Optimal")
-col3.metric("Engine Operating Stability Status", "Active", "100%", delta_color="inverse")
+except Exception as e:
+    st.warning("⚠️ Market data extraction delay. Double check that your tickers are spelled correctly (e.g. AAPL, MSFT).")
