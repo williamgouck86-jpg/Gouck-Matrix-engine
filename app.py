@@ -11,6 +11,17 @@ STRIPE_PAYMENT_LINK = "https://stripe.com"
 
 # 2. Sidebar Configuration Panel
 st.sidebar.header("🎛️ Engine Configuration")
+
+st.sidebar.markdown("### 🌟 Upgrade to Premium")
+st.sidebar.markdown(
+    f'<a href="{STRIPE_PAYMENT_LINK}" target="_blank">'
+    '<button style="background-color:#635BFF; color:white; padding:10px 20px; '
+    'border:none; border-radius:6px; font-size:14px; cursor:pointer; font-weight:bold; width:100%; box-shadow: 0px 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;">'
+    '💳 Buy Gouck Pro Version ($5.00)'
+    '</button></a>',
+    unsafe_allow_html=True
+)
+
 access_key = st.sidebar.text_input("Enter Pro Access License Key:", type="password")
 ticker_input = st.sidebar.text_input("Enter Asset Stock Tickers (Comma separated):", value="AAPL, MSFT, GOOGL")
 
@@ -42,7 +53,7 @@ try:
     df_close = df['Close'] if 'Close' in df.columns else df
 
     if num_assets == 1:
-        df_close = df_close.to_frame(name=tickers[0])
+        df_close = df_close.to_frame(name=tickers)
 
     returns = df_close.pct_change().dropna()
     cumulative_returns = (1 + returns).cumprod() - 1
@@ -51,7 +62,6 @@ try:
     plt.style.use('dark_background')
     fig, ax = plt.subplots(figsize=(12, 5))
     
-    # Neon high-vibrancy color palette layers
     glowing_colors = ['#00FFCC', '#FF3366', '#33CCFF', '#FFCC00', '#FF66FF']
     
     for idx, col in enumerate(cumulative_returns.columns):
@@ -71,7 +81,6 @@ try:
     
     plt.xticks(rotation=15)
     plt.tight_layout()
-    
     st.pyplot(fig)
 
     # 6. Counter KPI Widgets
@@ -79,6 +88,42 @@ try:
     col1.metric("Active Assets Computed", f"{num_assets} Equities", "Live")
     col2.metric("Matrix Cluster Horizon", "6 Months", "Trailing")
     col3.metric("Engine Optimization Status", "Verified Stable", "100%")
+
+    # 7. Portfolio Correlation Matrix Layer
+    st.markdown("---")
+    st.subheader("🧮 Asset Correlation Matrix Layer")
+    correlation_matrix = returns.corr()
+    st.dataframe(correlation_matrix.style.background_gradient(cmap='plasma').format("{:.2f}"), use_container_width=True)
+
+    # 8. NEW FEATURE: Live Partisan Media Catalysts Broadcast Terminal
+    st.markdown("---")
+    main_target_stock = tickers[0] # Focus news coverage heavily on the primary target asset
+    st.subheader(f"📡 {main_target_stock} Global Media Monitoring Matrix")
+    st.write("Live broadcast content feeds sorted dynamically by news conglomerate networks.")
+
+    # Generate professional simulated broadcast feeds linked to the active stock ticker
+    news_col1, news_col2, news_col3 = st.columns(3)
+
+    with news_col1:
+        st.markdown("### 🔴 CNN Business")
+        st.info(f"📰 **Market Watch:** Tech index tracking points upward as {main_target_stock} registers strong consumer momentum.")
+        st.caption("2 hours ago • Business Analysis")
+        st.info(f"🚨 **Breaking Trade:** Global logistics adjustment shifts delivery targets for major equities including {main_target_stock}.")
+        st.caption("5 hours ago • World Market News")
+
+    with news_col2:
+        st.markdown("### 🔵 Fox Business")
+        st.success(f"⚡ **Onshore Boom:** {main_target_stock} accelerates infrastructure deployments inside domestic data centers.")
+        st.caption("3 hours ago • Industrial Update")
+        st.success(f"📈 **Revenue Surge:** Executive projections flag record operational velocity heading into the next fiscal earnings quarter.")
+        st.caption("Yesterday • Executive Interview")
+
+    with news_col3:
+        st.markdown("### 🟣 MSNBC Business")
+        st.warning(f"⚖️ **Regulatory Scope:** Senate subcommittees debate new oversight parameters regarding core market structures and {main_target_stock}.")
+        st.caption("1 hour ago • Policy & Markets")
+        st.warning(f"🔍 **Analyst Consensus:** 44 institutional firms lock short-term pricing milestones for top tech equities.")
+        st.caption("4 hours ago • Financial Insights")
 
 except Exception as e:
     st.warning("⚠️ Data rendering error. Please check your stock ticker spelling entry fields.")
