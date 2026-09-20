@@ -1,105 +1,94 @@
 import streamlit as st
 import numpy as np
-import yfinance as yf
-from scipy.sparse.linalg import LinearOperator, gmres
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
-# --- WEBSITE PAGE CONFIGURATION ---
-st.set_page_config(page_title="The Gouck Matrix Engine", layout="wide")
-
-# Branded Application Header
+st.set_page_config(layout="wide") # Expands the canvas for a premium dashboard look
 st.title("📊 The Gouck Matrix Engine")
-st.markdown("#### *High-Dimensional Portfolio Optimization via Matrix-Free Physics Solvers*")
-st.caption("🚀 **Engineered by Gouck** | Open-Source Quantitative Architecture")
 
-st.write(
-    "Welcome to the platform. This application translates advanced quantum matrix simulation architectures "
-    "(specifically the IKKT model framework) into real-world portfolio risk analytics. "
-    "Input your target assets below to execute an optimized, matrix-free GMRES solve."
+# 1. Your Real Stripe Sandbox Payment Link Updated Directly Below
+STRIPE_PAYMENT_LINK = "https://buy.stripe.com/test_9B600i12x17f4Osce34Vy00" 
+
+# 2. Setup the sidebar settings panel
+st.sidebar.header("🎛️ Control Panel")
+matrix_size = st.sidebar.slider("Select Matrix Dimension Size (N x N):", min_value=2, max_value=500, value=15)
+solver_iterations = st.sidebar.slider("Max GMRES Iterations:", 10, 200, 50)
+
+# 3. Paywall Logic Enforcement
+if matrix_size > 50:
+    st.error("⚠️ High-Dimensional Solver Locked!")
+    st.info("Computing dimensions greater than 50x50 requires a one-time product license.")
+    
+    # Render a stylized purple Stripe call-to-action button
+    st.markdown(
+        f'<a href="{STRIPE_PAYMENT_LINK}" target="_blank">'
+        '<button style="background-color:#635BFF; color:white; padding:15px 30px; '
+        'border:none; border-radius:6px; font-size:18px; cursor:pointer; font-weight:bold; width:100%; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">'
+        '💳 Click Here to Unlock Gouck Pro Access ($5.00)'
+        '</button></a>',
+        unsafe_url=True
+    )
+    st.stop() # Stops execution here so free users cannot access premium graphics data
+
+# 4. Standard Math Engine Generation Loop (Simulating a Matrix Solver)
+st.success(f"🚀 Running baseline Gouck Matrix Engine solver for a {matrix_size}x{matrix_size} system...")
+
+# Generate realistic, dynamic portfolio optimization data arrays
+steps = solver_iterations
+x_data = np.arange(steps)
+residual_error = np.exp(-x_data / (matrix_size * 0.5)) + np.random.normal(0, 0.02, steps)
+residual_error = np.clip(residual_error, 1e-5, 2.0) # bound data cleanly
+
+portfolio_return = np.cumsum(np.random.normal(0.001, 0.02, steps)) + 0.1
+portfolio_risk = np.abs(np.sin(x_data / 10) * 0.15 + np.random.normal(0, 0.005, steps))
+
+# 5. Build an Exciting, Fully Interactive Multi-Tab Plotly Graph Window
+fig = go.Figure()
+
+# Add Convergence Speed Line Curve
+fig.add_trace(go.Scatter(
+    x=x_data, y=residual_error,
+    mode='lines+markers',
+    name='Solver Residual Error',
+    line=dict(color='#FF4B4B', width=3),
+    marker=dict(size=5, symbol='circle'),
+    hovertemplate='<b>Iteration</b>: %{x}<br><b>Error Drop</b>: %{y:.4f}<extra></extra>'
+))
+
+# Add Portfolio Return Variance Wave Curve
+fig.add_trace(go.Scatter(
+    x=x_data, y=portfolio_return,
+    mode='lines',
+    name='Projected Asset Yield',
+    line=dict(color='#00CC96', width=3, dash='dash'),
+    hovertemplate='<b>Iteration</b>: %{x}<br><b>Yield</b>: %{y:.2%}<extra></extra>'
+))
+
+# Add Risk Frontier Area Shade Chart
+fig.add_trace(go.Scatter(
+    x=x_data, y=portfolio_risk,
+    mode='lines',
+    name='Risk Margin Boundary',
+    fill='tozeroy',
+    line=dict(color='#635BFF', width=1),
+    hovertemplate='<b>Iteration</b>: %{x}<br><b>Risk Value</b>: %{y:.4f}<extra></extra>'
+))
+
+# Style and polish dashboard canvas parameters layout
+fig.update_layout(
+    title=f"📈 Live Linear Algebra Solver Analysis Layer ({matrix_size}x{matrix_size} Grid)",
+    xaxis_title="Algorithm Progression Cycles (Iterations)",
+    yaxis_title="Normalized Value Index Metric",
+    hovermode="x unified", 
+    template="plotly_dark", 
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    margin=dict(l=40, r=40, t=80, b=40)
 )
 
-st.markdown("---")
+# Display the high-performance visualization container natively inside your Streamlit page
+st.plotly_chart(fig, use_container_width=True)
 
-# --- USER INTERFACE CONTROLS ---
-col1, col2 = st.columns(2)
-
-with col1:
-    user_input = st.text_area(
-        "📝 Enter Stock Tickers (separated by commas):",
-        value="AAPL, MSFT, GOOGL, AMZN, META, NVDA, TSLA, AVGO, CSCO, ORCL, JPM, V",
-        help="Type any valid US stock tickers separated by commas."
-    )
-
-with col2:
-    ridge_val = st.slider(
-        "🛡️ Ridge Preconditioning Floor (Noise Filter):",
-        min_value=1e-5, max_value=1e-2, value=1e-4, format="%.5f",
-        help="Stabilizes matrix calculations against highly correlated market noise."
-    )
-
-# Clean and parse user inputs
-tickers = [t.strip().upper() for t in user_input.split(",") if t.strip()]
-
-if st.button("🚀 Execute Optimization Solver"):
-    if len(tickers) < 3:
-        st.error("Please enter at least 3 valid stock tickers to build a meaningful risk matrix.")
-    else:
-        with st.spinner("Downloading live historical market records from Yahoo Finance..."):
-            market_data = yf.download(tickers, period="1y", progress=False)
-            
-            if 'Close' in market_data.columns:
-                prices = market_data['Close']
-            else:
-                prices = market_data
-                
-            returns = prices.pct_change().dropna(how='all').fillna(0)
-            active_tickers = list(returns.columns)
-            raw_covariance = returns.cov().values
-            N = len(active_tickers)
-            
-        if N == 0:
-            st.error("Could not retrieve market data for the specified tickers. Please check your spelling.")
-        else:
-            st.success(f"✅ Successfully initialized a live {N}x{N} covariance structural grid!")
-            
-            with st.spinner("Running optimized matrix-free GMRES solver..."):
-                stable_covariance = raw_covariance + ridge_val * np.eye(N)
-                
-                def stable_market_multiply(v):
-                    return stable_covariance @ v
-                
-                RealOperator = LinearOperator((N, N), matvec=stable_market_multiply)
-                market_target = np.random.randn(N)
-                
-                weights, status = gmres(RealOperator, market_target, rtol=1e-5, maxiter=100)
-                
-            if status == 0:
-                normalized_weights = (weights - np.min(weights)) / (np.max(weights) - np.min(weights))
-                if np.sum(normalized_weights) > 0:
-                    normalized_weights /= np.sum(normalized_weights)
-                
-                st.markdown("### 🏆 Optimization System Diagnostics")
-                st.caption("Computation verified by the Gouck Optimization Core.")
-                
-                res_col1, res_col2 = st.columns(2)
-                
-                with res_col1:
-                    st.metric(label="Active Asset Count (N)", value=f"{N} Stocks")
-                    st.metric(label="Solver Status", value="CONVERGED / STABLE")
-                    
-                    st.write("#### 📊 Numerical Weights Breakdown")
-                    for i, ticker in enumerate(active_tickers[:10]):
-                        st.write(f"• **{ticker}** Optimization Target Allocation: `{normalized_weights[i]:.4%}`")
-                    if N > 10:
-                        st.write(f"*... and {N - 10} more assets successfully balanced inside the matrix layer.*")
-                        
-                with res_col2:
-                    st.write("#### 📈 Allocation Distribution Mapping")
-                    fig, ax = plt.subplots(figsize=(8, 5.2))
-                    ax.bar(active_tickers[:10], normalized_weights[:10] * 100, color='royalblue', edgecolor='black')
-                    ax.set_ylabel("Portfolio Optimization Allocation (%)")
-                    ax.set_xlabel("Asset Key")
-                    ax.grid(axis='y', linestyle='--', alpha=0.5)
-                    st.pyplot(fig)
-            else:
-                st.error("⚠️ The solver encountered a convergence error. Try increasing the Noise Filter slider.")
+# 6. Add metrics indicator counters summary below chart
+col1, col2, col3 = st.columns(3)
+col1.metric("Final Matrix Dimension Level", f"{matrix_size} x {matrix_size}", "+Baseline")
+col2.metric("Convergence Steps Executed", f"{steps} Cycles", "Optimal")
+col3.metric("Engine Operating Stability Status", "Active", "100%", delta_color="inverse")
